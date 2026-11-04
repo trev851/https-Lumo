@@ -1,0 +1,9 @@
+services:
+  - type: web
+    runtime: static
+    name: lumo
+    staticPublishPath: .
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache
