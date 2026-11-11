@@ -5,3 +5,6 @@ window.APP_CONFIG = {
   SUPABASE_URL: "https://aetmxidspudhnfeesocp.supabase.co",
   SUPABASE_ANON_KEY: "sb_publishable_aHvQ8RwT7m1qUeT28vzdEg_Wl9qvCjd"
 };
+
+// Keep Quick Play's retry behavior separate from the main app bundle.
+document.write('<script src="./quickplay-fallback.js"><\/script>');
