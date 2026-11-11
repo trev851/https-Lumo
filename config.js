@@ -5,6 +5,9 @@ window.APP_CONFIG = {
   SUPABASE_ANON_KEY: "sb_publishable_aHvQ8RwT7m1qUeT28vzdEg_Wl9qvCjd"
 };
 
+// Keep this enhancement bundle separate from the main app configuration.
+document.write('<script src="./lumo-features.js"><\/script>');
+
 // Profile color themes. Keep this small and independent of the player code.
 (() => {
   const themes = {
@@ -56,7 +59,7 @@ window.APP_CONFIG = {
   document.head.append(style);
 })();
 
-// Safe profile avatar feature for the current app.
+// Profile avatar editor.
 (() => {
   const STORAGE_KEY = "lumo-profile-avatar";
   const PRESETS = [
@@ -67,84 +70,26 @@ window.APP_CONFIG = {
     "https://images.unsplash.com/photo-1517841905240-472988c247ac?auto=format&fit=crop&w=400&q=80",
     "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80"
   ];
-
-  function loadAvatar() {
-    try {
-      return localStorage.getItem(STORAGE_KEY) || "";
-    } catch {
-      return "";
-    }
-  }
-
-  function saveAvatar(value) {
-    try { localStorage.setItem(STORAGE_KEY, value || ""); } catch {}
-  }
-
-  function ensureAvatarEditor() {
+  const load = () => { try { return localStorage.getItem(STORAGE_KEY) || ""; } catch { return ""; } };
+  const save = value => { try { localStorage.setItem(STORAGE_KEY, value || ""); } catch {} };
+  function ensureEditor() {
     const app = document.querySelector("#app");
     if (!app || app.querySelector("#lumo-avatar-editor")) return;
     const heading = [...app.querySelectorAll("h2")].find(h => h.textContent.trim() === "Appearance");
     if (!heading) return;
-
-    const avatar = loadAvatar();
+    const avatar = load();
     const block = document.createElement("div");
     block.id = "lumo-avatar-editor";
     block.className = "ad";
     block.style.display = "block";
-    block.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div style="width:72px;height:72px;border-radius:50%;overflow:hidden;background:var(--pan);display:grid;place-items:center;border:1px solid var(--line)">
-          <img id="lumo-avatar-preview" src="${avatar || PRESETS[0]}" alt="Profile avatar" style="width:100%;height:100%;object-fit:cover;display:block;">
-        </div>
-        <div style="flex:1;min-width:180px;">
-          <b>Profile avatar</b>
-          <small class="muted" style="display:block;margin-top:4px">Use a direct image URL or choose a preset.</small>
-        </div>
-      </div>
-      <div style="margin-top:12px;display:grid;gap:8px;">
-        <input id="lumo-avatar-url" type="url" value="${avatar || ""}" placeholder="https://example.com/avatar.png" style="width:100%">
-        <div class="eps">
-          <button type="button" id="lumo-avatar-save">Save avatar</button>
-          <button type="button" class="ghost" id="lumo-avatar-reset">Reset</button>
-        </div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">
-        ${PRESETS.map((src, i) => `<button type="button" class="ghost" data-lumo-preset="${src}" style="padding:8px 10px;">Preset ${i + 1}</button>`).join("")}
-      </div>
-    `;
-
+    block.innerHTML = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><img id="lumo-avatar-preview" src="${avatar || PRESETS[0]}" alt="Profile avatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;background:var(--pan)"><div><b>Profile avatar</b><small class="muted" style="display:block">Use an image URL or choose a preset.</small></div></div><input id="lumo-avatar-url" type="url" value="${avatar}" placeholder="https://example.com/avatar.png" style="width:100%;margin-top:12px"><div class="eps"><button type="button" id="lumo-avatar-save">Save avatar</button><button type="button" class="ghost" id="lumo-avatar-reset">Reset</button></div><div class="eps">${PRESETS.map((src, i) => `<button type="button" class="ghost" data-lumo-preset="${src}">Preset ${i + 1}</button>`).join("")}</div>`;
     heading.insertAdjacentElement("afterend", block);
-
-    const preview = block.querySelector("#lumo-avatar-preview");
-    const urlInput = block.querySelector("#lumo-avatar-url");
-    const setPreview = src => {
-      if (!src) src = PRESETS[0];
-      preview.src = src;
-      urlInput.value = src;
-      saveAvatar(src);
-    };
-
-    block.querySelector("#lumo-avatar-save").onclick = () => {
-      const val = (urlInput.value || "").trim();
-      if (!val) {
-        setPreview(PRESETS[0]);
-        return;
-      }
-      setPreview(val);
-    };
-
-    block.querySelector("#lumo-avatar-reset").onclick = () => {
-      saveAvatar("");
-      urlInput.value = "";
-      preview.src = PRESETS[0];
-    };
-
-    block.querySelectorAll("[data-lumo-preset]").forEach(btn => {
-      btn.onclick = () => setPreview(btn.dataset.lumoPreset);
-    });
+    const preview = block.querySelector("#lumo-avatar-preview"), input = block.querySelector("#lumo-avatar-url");
+    const set = src => { preview.src = src; input.value = src; save(src); };
+    block.querySelector("#lumo-avatar-save").onclick = () => { if (/^https:\/\//i.test(input.value.trim())) set(input.value.trim()); };
+    block.querySelector("#lumo-avatar-reset").onclick = () => { save(""); input.value = ""; preview.src = PRESETS[0]; };
+    block.querySelectorAll("[data-lumo-preset]").forEach(button => button.onclick = () => set(button.dataset.lumoPreset));
   }
-
   const app = document.querySelector("#app");
-  if (app) new MutationObserver(() => ensureAvatarEditor()).observe(app, { childList: true, subtree: true });
-  ensureAvatarEditor();
+  if (app) new MutationObserver(ensureEditor).observe(app, { childList: true, subtree: true });
 })();
